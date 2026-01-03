@@ -58,12 +58,13 @@ jobs:
             --configuration ${{ env.TEST_CONFIGURATION }} \
             --no-restore
  
-      # ✅ CORRECT PLAYWRIGHT INSTALL (PROJECT CONTEXT AWARE)
+      # ✅ FINAL CORRECT PLAYWRIGHT INSTALL STEP
       - name: Install Playwright browsers
         working-directory: ${{ steps.identify_proj.outputs.projDir }}
         run: |
           dotnet tool install --global Microsoft.Playwright.CLI
-          dotnet playwright install --with-deps
+          echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+          playwright install --with-deps
  
       - name: Run tests (Reqnroll)
         run: |
