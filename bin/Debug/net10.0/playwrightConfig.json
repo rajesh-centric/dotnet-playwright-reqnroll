@@ -1,0 +1,7 @@
+[
+  {
+    "Channel": "chrome",
+    "Headless": false,
+    "Args": "--start-maximized"
+  }
+ ]
