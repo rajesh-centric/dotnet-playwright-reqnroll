@@ -11,7 +11,6 @@ jobs:
     env:
       DOTNET_VERSION: "8.0.x"
       TEST_CONFIGURATION: "Release"
-      PREFERRED_TFM: "net8.0"
  
     steps:
       - name: Checkout
@@ -22,84 +21,49 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
  
-      - name: Restore (solution-wide)
+      - name: Restore
         run: dotnet restore
  
-      # Identify the test project that references Microsoft.Playwright
-      - name: Identify Playwright test project + TFM
+      - name: Identify Playwright test project
         id: identify_proj
         shell: pwsh
         run: |
           $proj = $null
  
           foreach ($file in Get-ChildItem -Recurse -Filter *.csproj) {
-            try {
-              [xml]$xml = Get-Content $file.FullName
-              $refs = $xml.Project.ItemGroup.PackageReference
-              if ($refs | Where-Object { $_.Include -eq "Microsoft.Playwright" }) {
-                $proj = $file
-                break
-              }
-            } catch {
-              continue
+            [xml]$xml = Get-Content $file.FullName
+            if ($xml.Project.ItemGroup.PackageReference |
+                Where-Object { $_.Include -eq "Microsoft.Playwright" }) {
+              $proj = $file
+              break
             }
           }
  
           if (-not $proj) {
-            Write-Error "No project referencing Microsoft.Playwright was found."
+            Write-Error "No Playwright project found"
             exit 1
           }
  
-          $projPath = $proj.FullName
-          Write-Host "Playwright project: $projPath"
- 
-          [xml]$xml = Get-Content $projPath
- 
-          $tfm = $xml.Project.PropertyGroup.TargetFramework
-          $tfmsNode = $xml.Project.PropertyGroup.TargetFrameworks
- 
-          if (-not $tfm -and $tfmsNode) {
-            $tfms = $tfmsNode.Split(';')
-            if ($tfms -contains "${{ env.PREFERRED_TFM }}") {
-              $tfm = "${{ env.PREFERRED_TFM }}"
-            } else {
-              $tfm = $tfms[0]
-            }
-          }
- 
-          if (-not $tfm) {
-            Write-Error "Could not determine TargetFramework for $projPath"
-            exit 1
-          }
- 
-          Write-Host "Resolved TFM: $tfm"
- 
-          "projPath=$projPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          "tfm=$tfm" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "projPath=$($proj.FullName)" | Out-File $env:GITHUB_OUTPUT -Append
+          Write-Host "Using Playwright project: $($proj.FullName)"
  
       - name: Build Playwright test project
-        run: dotnet build "${{ steps.identify_proj.outputs.projPath }}" `
-              --configuration ${{ env.TEST_CONFIGURATION }} `
-              --no-restore
- 
-      - name: Install Playwright browsers (+deps)
-        shell: pwsh
         run: |
-          $projDir = Split-Path "${{ steps.identify_proj.outputs.projPath }}" -Parent
-          $scriptPath = Join-Path $projDir "bin/${{ env.TEST_CONFIGURATION }}/${{ steps.identify_proj.outputs.tfm }}/playwright.ps1"
+          dotnet build "${{ steps.identify_proj.outputs.projPath }}" \
+            --configuration ${{ env.TEST_CONFIGURATION }} \
+            --no-restore
  
-          if (-not (Test-Path $scriptPath)) {
-            Write-Error "Playwright installer not found at $scriptPath"
-            exit 1
-          }
- 
-          & $scriptPath install --with-deps
- 
-      - name: Test (Reqnroll via dotnet test)
+      # ✅ CORRECT WAY TO INSTALL PLAYWRIGHT BROWSERS
+      - name: Install Playwright browsers
         run: |
-          dotnet test "${{ steps.identify_proj.outputs.projPath }}" `
-            --configuration ${{ env.TEST_CONFIGURATION }} `
-            --no-build `
+          dotnet tool restore
+          dotnet tool run playwright install --with-deps
+ 
+      - name: Run tests (Reqnroll)
+        run: |
+          dotnet test "${{ steps.identify_proj.outputs.projPath }}" \
+            --configuration ${{ env.TEST_CONFIGURATION }} \
+            --no-build \
             --logger "trx;LogFileName=TestResults.trx"
  
       - name: Upload test results
@@ -109,7 +73,7 @@ jobs:
           name: dotnet-test-results
           path: "**/TestResults.trx"
  
-      - name: Upload Playwright artifacts (optional)
+      - name: Upload Playwright artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -117,5 +81,4 @@ jobs:
           path: |
             **/playwright-report/**
             **/test-results/**
-            **/*.zip
           if-no-files-found: ignore
