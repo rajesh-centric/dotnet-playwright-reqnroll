@@ -1,0 +1,69 @@
+
+name: Playwright .NET + Reqnroll CI
+
+on:
+  push:            # runs after every commit/push
+    branches: [ "**" ]
+  # pull_request:   # uncomment if you also want PR validation
+  #   branches: [ "**" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    env:
+      # Adjust if your test project targets a different TFM (e.g., net7.0)
+      DOTNET_VERSION: "8.0.x"
+      TEST_CONFIGURATION: "Release"
+      TEST_FRAMEWORK: "net8.0"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET ${{ env.DOTNET_VERSION }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration ${{ env.TEST_CONFIGURATION }} --no-restore
+
+      # Install Playwright browsers required for Microsoft.Playwright (.NET)
+      # Uses the Playwright install script emitted under bin/<Config>/<TFM>/playwright.ps1
+      - name: Install Playwright browsers (+deps)
+        shell: pwsh
+        run: |
+          ./bin/${{ env.TEST_CONFIGURATION }}/${{ env.TEST_FRAMEWORK }}/playwright.ps1 install --with-deps
+
+      # Run tests (Reqnroll scenarios run via dotnet test)
+      - name: Test
+        run: |
+          dotnet test --configuration ${{ env.TEST_CONFIGURATION }} --no-build \
+            --logger "trx;LogFileName=TestResults.trx" \
+            --verbosity normal
+
+      # Upload test result logs (TRX)
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotnet-test-results
+          path: "**/TestResults.trx"
+
+      # If you record traces/videos/screenshots in failing scenarios,
+      # upload them for debugging (adjust paths as per your test setup).
+      - name: Upload Playwright artifacts (optional)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: |
+            **/playwright-report/**
+            **/test-results/**
+            **/*.zip
+          if-no-files-found: ignore
