@@ -44,33 +44,14 @@ jobs:
             exit 1
           }
  
-          $projPath = $proj.FullName
-          $projDir  = Split-Path $projPath -Parent
+          "projPath=$($proj.FullName)" | Out-File $env:GITHUB_OUTPUT -Append
+          Write-Host "Playwright project: $($proj.FullName)"
  
-          "projPath=$projPath" | Out-File $env:GITHUB_OUTPUT -Append
-          "projDir=$projDir"   | Out-File $env:GITHUB_OUTPUT -Append
- 
-          Write-Host "Playwright project: $projPath"
- 
-      - name: Build Playwright test project
-        run: |
-          dotnet build "${{ steps.identify_proj.outputs.projPath }}" \
-            --configuration ${{ env.TEST_CONFIGURATION }} \
-            --no-restore
- 
-      # ✅ FINAL CORRECT PLAYWRIGHT INSTALL STEP
-      - name: Install Playwright browsers
-        working-directory: ${{ steps.identify_proj.outputs.projDir }}
-        run: |
-          dotnet tool install --global Microsoft.Playwright.CLI
-          echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
-          playwright install --with-deps
- 
-      - name: Run tests (Reqnroll)
+      # ✅ SINGLE STEP: BUILD + INSTALL BROWSERS + RUN TESTS
+      - name: Run Playwright tests (Reqnroll)
         run: |
           dotnet test "${{ steps.identify_proj.outputs.projPath }}" \
             --configuration ${{ env.TEST_CONFIGURATION }} \
-            --no-build \
             --logger "trx;LogFileName=TestResults.trx"
  
       - name: Upload test results
