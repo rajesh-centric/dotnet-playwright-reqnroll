@@ -2,7 +2,7 @@
 name: Playwright .NET + Reqnroll CI
 
 on:
-  push:            # runs after every commit/push (all branches)
+  push:
     branches: [ "**" ]
   # pull_request:
   #   branches: [ "**" ]
@@ -15,6 +15,7 @@ jobs:
     env:
       DOTNET_VERSION: "8.0.x"
       TEST_CONFIGURATION: "Release"
+      PREFERRED_TFM: "net8.0"   # change if your tests target a different TFM
 
     steps:
       - name: Checkout
@@ -25,38 +26,65 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Restore
+      - name: Restore (solution-wide)
         run: dotnet restore
 
-      - name: Build
-        run: dotnet build --configuration ${{ env.TEST_CONFIGURATION }} --no-restore
+      # Find the csproj that references Microsoft.Playwright and determine its TFM
+     Object { $_.Include -eq "Microsoft.Playwright" }      - name: Identify Playwright test project + TFM
+            if ($hasPw) { $_ }
+          } | Select-Object -First 1
 
-      # Auto-detect the generated Playwright browser installer script
-      - name: Locate playwright.ps1
-        id: pwsh_path
-        shell: pwsh
-        run: |
-          $script = Get-ChildItem -Recurse -Filter 'playwright.ps1' -Path "./bin" | Select-Object -First 1
-          if (-not $script) {
-            Write-Host "ERROR: playwright.ps1 not found under ./bin. Ensure at least one project references Microsoft.Playwright and was built."
+          if (-not $proj) {
+            Write-Host "ERROR: No project referencing Microsoft.Playwright was found."
             exit 1
           }
-          Write-Host "Playwright installer: $($script.FullName)"
-          "scriptPath=$($script.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
-      # Install Playwright browsers + system deps (per official docs)
-      - name: Install Playwright browsers (+deps)
+          $projPath = $proj.FullName
+          Write-Host "Playwright project: $projPath"
+
+          # Read TargetFramework / TargetFrameworks
+          $xml = xml
+          $tfm = $xml.Project.PropertyGroup.TargetFramework
+          $tfmsNode = $xml.Project.PropertyGroup.TargetFrameworks
+          if (-not $tfm -and $tfmsNode) {
+            $tfms = $tfmsNode.Trim().Split(';')
+            # Prefer PREFERRED_TFM if present, else first
+            $preferred = "${{ env.PREFERRED_TFM }}"
+            if ($tfms -contains $preferred) { $tfm = $preferred } else { $tfm = $tfms[0] }
+          }
+
+          if (-not $tfm) {
+            Write-Host "ERROR: Could not determine TargetFramework for $projPath"
+            exit 1
+          }
+          Write-Host "Resolved TFM: $tfm"
+
+          # Output values to workflow
+          "projPath=$projPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "tfm=$tfm" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Build Playwright test project (Release)
+        run: dotnet build "${{ steps.identify_proj.outputs.projPath }}" --configuration ${{ env.TEST_CONFIGURATION }} --no-restore
+
+      - name: Install Playwright browsers (+deps) for the built project
         shell: pwsh
-        run: pwsh "${{ steps.pwsh_path.outputs.scriptPath }}" install --with-deps
-
-      # Run tests (Reqnroll scenarios execute via dotnet test)
-      - name: Test
         run: |
-          dotnet test --configuration ${{ env.TEST_CONFIGURATION }} --no-build \
+          $projDir = Split-Path "${{ steps.identify_proj.outputs.projPath }}" -Parent
+          $scriptPath = Join-Path $projDir "bin/${{ env.TEST_CONFIGURATION }}/${{ steps.identify_proj.outputs.tfm }}/playwright.ps1"
+          if (-not (Test-Path $scriptPath)) {
+            Write-Host "ERROR: Playwright installer script not found at $scriptPath"
+            Get-ChildItem -Recurse -Path (Join-Path $projDir "bin") -Filter "playwright.ps1" | ForEach-Object { Write-Host "Candidate: $($_.FullName)" }
+            exit 1
+          }
+          Write-Host "Using installer: $scriptPath"
+          & $scriptPath install --with-deps
+
+      - name: Test (Reqnroll via dotnet test)
+        run: |
+          dotnet test "${{ steps.identify_proj.outputs.projPath }}" --configuration ${{ env.TEST_CONFIGURATION }} --no-build \
             --logger "trx;LogFileName=TestResults.trx" \
             --verbosity normal
 
-      # Upload test result logs (TRX)
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
@@ -64,7 +92,6 @@ jobs:
           name: dotnet-test-results
           path: "**/TestResults.trx"
 
-      # Optional: upload Playwright traces/videos/screenshots if you record them
       - name: Upload Playwright artifacts (optional)
         if: always()
         uses: actions/upload-artifact@v4
@@ -75,3 +102,14 @@ jobs:
             **/test-results/**
             **/*.zip
           if-no-files-found: ignore
+
+        id: identify_proj
+        shell: pwsh
+        run: |
+          # Find first .csproj that references Microsoft.Playwright
+          $proj = Get-ChildItem -Recurse -Filter *.csproj | ForEach-Object {
+            try {
+              $xml = xml
+            } catch {
+              return
+            }
