@@ -53,11 +53,11 @@ jobs:
             --configuration ${{ env.TEST_CONFIGURATION }} \
             --no-restore
  
-      # ✅ CORRECT WAY TO INSTALL PLAYWRIGHT BROWSERS
+      # ✅ CORRECT PLAYWRIGHT INSTALL (NO TOOL MANIFEST REQUIRED)
       - name: Install Playwright browsers
         run: |
-          dotnet tool restore
-          dotnet tool run playwright install --with-deps
+          dotnet tool install --global Microsoft.Playwright.CLI
+          playwright install --with-deps
  
       - name: Run tests (Reqnroll)
         run: |
