@@ -44,8 +44,13 @@ jobs:
             exit 1
           }
  
-          "projPath=$($proj.FullName)" | Out-File $env:GITHUB_OUTPUT -Append
-          Write-Host "Using Playwright project: $($proj.FullName)"
+          $projPath = $proj.FullName
+          $projDir  = Split-Path $projPath -Parent
+ 
+          "projPath=$projPath" | Out-File $env:GITHUB_OUTPUT -Append
+          "projDir=$projDir"   | Out-File $env:GITHUB_OUTPUT -Append
+ 
+          Write-Host "Playwright project: $projPath"
  
       - name: Build Playwright test project
         run: |
@@ -53,11 +58,12 @@ jobs:
             --configuration ${{ env.TEST_CONFIGURATION }} \
             --no-restore
  
-      # ✅ CORRECT PLAYWRIGHT INSTALL (NO TOOL MANIFEST REQUIRED)
+      # ✅ CORRECT PLAYWRIGHT INSTALL (PROJECT CONTEXT AWARE)
       - name: Install Playwright browsers
+        working-directory: ${{ steps.identify_proj.outputs.projDir }}
         run: |
           dotnet tool install --global Microsoft.Playwright.CLI
-          playwright install --with-deps
+          dotnet playwright install --with-deps
  
       - name: Run tests (Reqnroll)
         run: |
