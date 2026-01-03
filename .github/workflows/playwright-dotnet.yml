@@ -11,7 +11,10 @@ jobs:
     env:
       DOTNET_VERSION: "8.0.x"
       TEST_CONFIGURATION: "Release"
-      PLAYWRIGHT_HEADLESS: "true"   # ✅ IMPORTANT FIX
+ 
+      # ✅ Force Playwright to run headless even if code says Headless=false
+      PLAYWRIGHT_BROWSERS_PATH: ~/.cache/ms-playwright
+      PLAYWRIGHT_CHROMIUM_ARGS: "--headless=new --disable-gpu --no-sandbox"
  
     steps:
       - name: Checkout
@@ -25,12 +28,11 @@ jobs:
       - name: Restore
         run: dotnet restore
  
-      - name: Identify Playwright test project
+      - name: Identify Playwright project
         id: identify_proj
         shell: pwsh
         run: |
           $proj = $null
- 
           foreach ($file in Get-ChildItem -Recurse -Filter *.csproj) {
             [xml]$xml = Get-Content $file.FullName
             if ($xml.Project.ItemGroup.PackageReference |
@@ -46,10 +48,9 @@ jobs:
           }
  
           "projPath=$($proj.FullName)" | Out-File $env:GITHUB_OUTPUT -Append
-          Write-Host "Playwright project: $($proj.FullName)"
  
-      # ✅ Headless execution (CI-safe)
-      - name: Run Playwright tests (Reqnroll)
+      # ✅ Single step: build + install browsers + run tests
+      - name: Run Playwright tests (CI-safe headless)
         run: |
           dotnet test "${{ steps.identify_proj.outputs.projPath }}" \
             --configuration ${{ env.TEST_CONFIGURATION }} \
