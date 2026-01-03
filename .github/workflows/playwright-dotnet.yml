@@ -11,6 +11,7 @@ jobs:
     env:
       DOTNET_VERSION: "8.0.x"
       TEST_CONFIGURATION: "Release"
+      PLAYWRIGHT_HEADLESS: "true"   # ✅ IMPORTANT FIX
  
     steps:
       - name: Checkout
@@ -47,7 +48,7 @@ jobs:
           "projPath=$($proj.FullName)" | Out-File $env:GITHUB_OUTPUT -Append
           Write-Host "Playwright project: $($proj.FullName)"
  
-      # ✅ SINGLE STEP: BUILD + INSTALL BROWSERS + RUN TESTS
+      # ✅ Headless execution (CI-safe)
       - name: Run Playwright tests (Reqnroll)
         run: |
           dotnet test "${{ steps.identify_proj.outputs.projPath }}" \
