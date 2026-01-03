@@ -1,98 +1,114 @@
-
 name: Playwright .NET + Reqnroll CI
-
+ 
 on:
-  push:          # run after every commit/push (all branches)
-
+  push:
+ 
 jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 60
-
+ 
     env:
       DOTNET_VERSION: "8.0.x"
       TEST_CONFIGURATION: "Release"
-      PREFERRED_TFM: "net8.0"   # set to your actual test target (e.g., net7.0)
-
+      PREFERRED_TFM: "net8.0"
+ 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
+ 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-
+ 
       - name: Restore (solution-wide)
         run: dotnet restore
-
-      # Identify the test project that references Microsoft.Playwright and its TFM
+ 
+      # Identify the test project that references Microsoft.Playwright
       - name: Identify Playwright test project + TFM
         id: identify_proj
         shell: pwsh
         run: |
-          # Find first .csproj that references Microsoft.Playwright
-          $proj = Get-ChildItem -Recurse -Filter *.csproj | ForEach-Object {
-            try { $xml = xml } catch { continue }
-            $hasPw = $xml.Project.ItemGroup.PackageReference | Where-Object { $_.Include -eq "Microsoft.Playwright" }
-            if ($hasPw) { $_ }
-          } | Select-Object -First 1
-
+          $proj = $null
+ 
+          foreach ($file in Get-ChildItem -Recurse -Filter *.csproj) {
+            try {
+              [xml]$xml = Get-Content $file.FullName
+              $refs = $xml.Project.ItemGroup.PackageReference
+              if ($refs | Where-Object { $_.Include -eq "Microsoft.Playwright" }) {
+                $proj = $file
+                break
+              }
+            } catch {
+              continue
+            }
+          }
+ 
           if (-not $proj) {
-            Write-Host "ERROR: No project referencing Microsoft.Playwright was found."
+            Write-Error "No project referencing Microsoft.Playwright was found."
             exit 1
           }
-
+ 
           $projPath = $proj.FullName
           Write-Host "Playwright project: $projPath"
-
-          # Read TargetFramework / TargetFrameworks
-          $xml = xml
+ 
+          [xml]$xml = Get-Content $projPath
+ 
           $tfm = $xml.Project.PropertyGroup.TargetFramework
           $tfmsNode = $xml.Project.PropertyGroup.TargetFrameworks
+ 
           if (-not $tfm -and $tfmsNode) {
-            $tfms = $tfmsNode.Trim().Split(';')
-            $preferred = "${{ env.PREFERRED_TFM }}"
-            if ($tfms -contains $preferred) { $tfm = $preferred } else { $tfm = $tfms[0] }
+            $tfms = $tfmsNode.Split(';')
+            if ($tfms -contains "${{ env.PREFERRED_TFM }}") {
+              $tfm = "${{ env.PREFERRED_TFM }}"
+            } else {
+              $tfm = $tfms[0]
+            }
           }
+ 
           if (-not $tfm) {
-            Write-Host "ERROR: Could not determine TargetFramework for $projPath"
+            Write-Error "Could not determine TargetFramework for $projPath"
             exit 1
           }
+ 
           Write-Host "Resolved TFM: $tfm"
-
+ 
           "projPath=$projPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           "tfm=$tfm" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-
-      - name: Build Playwright test project (Release)
-        run: dotnet build "${{ steps.identify_proj.outputs.projPath }}" --configuration ${{ env.TEST_CONFIGURATION }} --no-restore
-
+ 
+      - name: Build Playwright test project
+        run: dotnet build "${{ steps.identify_proj.outputs.projPath }}" `
+              --configuration ${{ env.TEST_CONFIGURATION }} `
+              --no-restore
+ 
       - name: Install Playwright browsers (+deps)
         shell: pwsh
         run: |
           $projDir = Split-Path "${{ steps.identify_proj.outputs.projPath }}" -Parent
           $scriptPath = Join-Path $projDir "bin/${{ env.TEST_CONFIGURATION }}/${{ steps.identify_proj.outputs.tfm }}/playwright.ps1"
+ 
           if (-not (Test-Path $scriptPath)) {
-            Write-Host "ERROR: Playwright installer script not found at $scriptPath"
-            Get-ChildItem -Recurse -Path (Join-Path $projDir "bin") -Filter "playwright.ps1" | ForEach-Object { Write-Host "Candidate: $($_.FullName)" }
+            Write-Error "Playwright installer not found at $scriptPath"
             exit 1
           }
-          Write-Host "Using installer: $scriptPath"
+ 
           & $scriptPath install --with-deps
-
+ 
       - name: Test (Reqnroll via dotnet test)
         run: |
-          dotnet test "${{ steps.identify_proj.outputs.projPath }}" --configuration ${{ env.TEST_CONFIGURATION }} --no-build \
-            --logger "trx;LogFileName=TestResults.trx" \
-            --verbosity normal
-
+          dotnet test "${{ steps.identify_proj.outputs.projPath }}" `
+            --configuration ${{ env.TEST_CONFIGURATION }} `
+            --no-build `
+            --logger "trx;LogFileName=TestResults.trx"
+ 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: dotnet-test-results
           path: "**/TestResults.trx"
-
+ 
       - name: Upload Playwright artifacts (optional)
         if: always()
         uses: actions/upload-artifact@v4
