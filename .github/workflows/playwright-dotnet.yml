@@ -2,9 +2,9 @@
 name: Playwright .NET + Reqnroll CI
 
 on:
-  push:            # runs after every commit/push
+  push:            # runs after every commit/push (all branches)
     branches: [ "**" ]
-  # pull_request:   # uncomment if you also want PR validation
+  # pull_request:
   #   branches: [ "**" ]
 
 jobs:
@@ -13,10 +13,8 @@ jobs:
     timeout-minutes: 60
 
     env:
-      # Adjust if your test project targets a different TFM (e.g., net7.0)
       DOTNET_VERSION: "8.0.x"
       TEST_CONFIGURATION: "Release"
-      TEST_FRAMEWORK: "net8.0"
 
     steps:
       - name: Checkout
@@ -33,14 +31,25 @@ jobs:
       - name: Build
         run: dotnet build --configuration ${{ env.TEST_CONFIGURATION }} --no-restore
 
-      # Install Playwright browsers required for Microsoft.Playwright (.NET)
-      # Uses the Playwright install script emitted under bin/<Config>/<TFM>/playwright.ps1
-      - name: Install Playwright browsers (+deps)
+      # Auto-detect the generated Playwright browser installer script
+      - name: Locate playwright.ps1
+        id: pwsh_path
         shell: pwsh
         run: |
-          ./bin/${{ env.TEST_CONFIGURATION }}/${{ env.TEST_FRAMEWORK }}/playwright.ps1 install --with-deps
+          $script = Get-ChildItem -Recurse -Filter 'playwright.ps1' -Path "./bin" | Select-Object -First 1
+          if (-not $script) {
+            Write-Host "ERROR: playwright.ps1 not found under ./bin. Ensure at least one project references Microsoft.Playwright and was built."
+            exit 1
+          }
+          Write-Host "Playwright installer: $($script.FullName)"
+          "scriptPath=$($script.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
-      # Run tests (Reqnroll scenarios run via dotnet test)
+      # Install Playwright browsers + system deps (per official docs)
+      - name: Install Playwright browsers (+deps)
+        shell: pwsh
+        run: pwsh "${{ steps.pwsh_path.outputs.scriptPath }}" install --with-deps
+
+      # Run tests (Reqnroll scenarios execute via dotnet test)
       - name: Test
         run: |
           dotnet test --configuration ${{ env.TEST_CONFIGURATION }} --no-build \
@@ -55,8 +64,7 @@ jobs:
           name: dotnet-test-results
           path: "**/TestResults.trx"
 
-      # If you record traces/videos/screenshots in failing scenarios,
-      # upload them for debugging (adjust paths as per your test setup).
+      # Optional: upload Playwright traces/videos/screenshots if you record them
       - name: Upload Playwright artifacts (optional)
         if: always()
         uses: actions/upload-artifact@v4
