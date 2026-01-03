@@ -2,10 +2,7 @@
 name: Playwright .NET + Reqnroll CI
 
 on:
-  push:
-    branches: [ "**" ]
-  # pull_request:
-  #   branches: [ "**" ]
+  push:          # run after every commit/push (all branches)
 
 jobs:
   test:
@@ -15,13 +12,13 @@ jobs:
     env:
       DOTNET_VERSION: "8.0.x"
       TEST_CONFIGURATION: "Release"
-      PREFERRED_TFM: "net8.0"   # change if your tests target a different TFM
+      PREFERRED_TFM: "net8.0"   # set to your actual test target (e.g., net7.0)
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup .NET ${{ env.DOTNET_VERSION }}
+      - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
@@ -29,8 +26,15 @@ jobs:
       - name: Restore (solution-wide)
         run: dotnet restore
 
-      # Find the csproj that references Microsoft.Playwright and determine its TFM
-     Object { $_.Include -eq "Microsoft.Playwright" }      - name: Identify Playwright test project + TFM
+      # Identify the test project that references Microsoft.Playwright and its TFM
+      - name: Identify Playwright test project + TFM
+        id: identify_proj
+        shell: pwsh
+        run: |
+          # Find first .csproj that references Microsoft.Playwright
+          $proj = Get-ChildItem -Recurse -Filter *.csproj | ForEach-Object {
+            try { $xml = xml } catch { continue }
+            $hasPw = $xml.Project.ItemGroup.PackageReference | Where-Object { $_.Include -eq "Microsoft.Playwright" }
             if ($hasPw) { $_ }
           } | Select-Object -First 1
 
@@ -48,25 +52,22 @@ jobs:
           $tfmsNode = $xml.Project.PropertyGroup.TargetFrameworks
           if (-not $tfm -and $tfmsNode) {
             $tfms = $tfmsNode.Trim().Split(';')
-            # Prefer PREFERRED_TFM if present, else first
             $preferred = "${{ env.PREFERRED_TFM }}"
             if ($tfms -contains $preferred) { $tfm = $preferred } else { $tfm = $tfms[0] }
           }
-
           if (-not $tfm) {
             Write-Host "ERROR: Could not determine TargetFramework for $projPath"
             exit 1
           }
           Write-Host "Resolved TFM: $tfm"
 
-          # Output values to workflow
           "projPath=$projPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           "tfm=$tfm" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
       - name: Build Playwright test project (Release)
         run: dotnet build "${{ steps.identify_proj.outputs.projPath }}" --configuration ${{ env.TEST_CONFIGURATION }} --no-restore
 
-      - name: Install Playwright browsers (+deps) for the built project
+      - name: Install Playwright browsers (+deps)
         shell: pwsh
         run: |
           $projDir = Split-Path "${{ steps.identify_proj.outputs.projPath }}" -Parent
@@ -102,14 +103,3 @@ jobs:
             **/test-results/**
             **/*.zip
           if-no-files-found: ignore
-
-        id: identify_proj
-        shell: pwsh
-        run: |
-          # Find first .csproj that references Microsoft.Playwright
-          $proj = Get-ChildItem -Recurse -Filter *.csproj | ForEach-Object {
-            try {
-              $xml = xml
-            } catch {
-              return
-            }
