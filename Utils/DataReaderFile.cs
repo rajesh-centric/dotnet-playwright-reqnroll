@@ -15,8 +15,15 @@ namespace PlaywrightPoc.Utils
         }
         public static List<ApplicationData> GetAppData(string path)
         {
-            var data = File.ReadAllText(path);
-            return JsonSerializer.Deserialize<List<ApplicationData>>(data);
+             var options = new JsonSerializerOptions
+             {
+                 ReadCommentHandling = JsonCommentHandling.Skip
+             };
+
+             // Deserialize your JSON string using these options
+             var data = File.ReadAllText(path);
+             return JsonSerializer.Deserialize<List<ApplicationData>>(data,options);
+            
         }
     }
 }
