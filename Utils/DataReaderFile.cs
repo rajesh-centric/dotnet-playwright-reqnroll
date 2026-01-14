@@ -15,6 +15,7 @@ namespace PlaywrightPoc.Utils
         }
         public static List<ApplicationData> GetAppData(string path)
         {
+
             var options = new JsonSerializerOptions
             {
                 ReadCommentHandling = JsonCommentHandling.Skip
@@ -34,6 +35,7 @@ namespace PlaywrightPoc.Utils
 
             var data = File.ReadAllText(path);
             return JsonSerializer.Deserialize<List<EnvironmentData>>(data, options);
+
         }
     }
 }

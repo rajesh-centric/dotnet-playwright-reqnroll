@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\rajesh.katyal\\source\\repos1\\latest2\\PlaywrightPoc\\PlaywrightPoc.csproj": {}
+    "C:\\Users\\rajesh.katyal\\source\\repos1\\repo_git\\dotnet-pw-web\\PlaywrightPoc\\PlaywrightPoc.csproj": {}
   },
   "projects": {
-    "C:\\Users\\rajesh.katyal\\source\\repos1\\latest2\\PlaywrightPoc\\PlaywrightPoc.csproj": {
+    "C:\\Users\\rajesh.katyal\\source\\repos1\\repo_git\\dotnet-pw-web\\PlaywrightPoc\\PlaywrightPoc.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\rajesh.katyal\\source\\repos1\\latest2\\PlaywrightPoc\\PlaywrightPoc.csproj",
+        "projectUniqueName": "C:\\Users\\rajesh.katyal\\source\\repos1\\repo_git\\dotnet-pw-web\\PlaywrightPoc\\PlaywrightPoc.csproj",
         "projectName": "PlaywrightPoc",
-        "projectPath": "C:\\Users\\rajesh.katyal\\source\\repos1\\latest2\\PlaywrightPoc\\PlaywrightPoc.csproj",
+        "projectPath": "C:\\Users\\rajesh.katyal\\source\\repos1\\repo_git\\dotnet-pw-web\\PlaywrightPoc\\PlaywrightPoc.csproj",
         "packagesPath": "C:\\Users\\rajesh.katyal\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\rajesh.katyal\\source\\repos1\\latest2\\PlaywrightPoc\\obj\\",
+        "outputPath": "C:\\Users\\rajesh.katyal\\source\\repos1\\repo_git\\dotnet-pw-web\\PlaywrightPoc\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

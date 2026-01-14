@@ -1551,3 +1551,14 @@ C:\Users\rajesh.katyal\source\repos1\latest2\PlaywrightPoc\obj\Debug\net10.0\ref
 C:\Users\rajesh.katyal\source\repos1\latest2\PlaywrightPoc\obj\Debug\net10.0\PlaywrightPoc.pdb
 C:\Users\rajesh.katyal\source\repos1\latest2\PlaywrightPoc\obj\Debug\net10.0\PlaywrightPoc.genruntimeconfig.cache
 C:\Users\rajesh.katyal\source\repos1\latest2\PlaywrightPoc\obj\Debug\net10.0\ref\PlaywrightPoc.dll
+c:\Users\rajesh.katyal\source\repos1\repo_git\dotnet-pw-web\PlaywrightPoc\obj\Debug\net10.0\PlaywrightPoc.csproj.AssemblyReference.cache
+c:\Users\rajesh.katyal\source\repos1\repo_git\dotnet-pw-web\PlaywrightPoc\obj\Debug\net10.0\PlaywrightPoc.ProcessFeatureFileInputs.cache
+c:\Users\rajesh.katyal\source\repos1\repo_git\dotnet-pw-web\PlaywrightPoc\obj\Debug\net10.0\PlaywrightPoc.GeneratedMSBuildEditorConfig.editorconfig
+c:\Users\rajesh.katyal\source\repos1\repo_git\dotnet-pw-web\PlaywrightPoc\obj\Debug\net10.0\PlaywrightPoc.AssemblyInfoInputs.cache
+c:\Users\rajesh.katyal\source\repos1\repo_git\dotnet-pw-web\PlaywrightPoc\obj\Debug\net10.0\PlaywrightPoc.AssemblyInfo.cs
+c:\Users\rajesh.katyal\source\repos1\repo_git\dotnet-pw-web\PlaywrightPoc\obj\Debug\net10.0\PlaywrightPoc.csproj.CoreCompileInputs.cache
+c:\Users\rajesh.katyal\source\repos1\repo_git\dotnet-pw-web\PlaywrightPoc\obj\Debug\net10.0\NUnit.AssemblyHooks.PlaywrightPoc.cs
+c:\Users\rajesh.katyal\source\repos1\repo_git\dotnet-pw-web\PlaywrightPoc\obj\Debug\net10.0\PlaywrightPoc.sourcelink.json
+c:\Users\rajesh.katyal\source\repos1\repo_git\dotnet-pw-web\PlaywrightPoc\obj\Debug\net10.0\PlaywrightPoc.dll
+c:\Users\rajesh.katyal\source\repos1\repo_git\dotnet-pw-web\PlaywrightPoc\obj\Debug\net10.0\refint\PlaywrightPoc.dll
+c:\Users\rajesh.katyal\source\repos1\repo_git\dotnet-pw-web\PlaywrightPoc\obj\Debug\net10.0\PlaywrightPoc.pdb

@@ -1,0 +1,74 @@
+name: Playwright .NET + Reqnroll CI
+ 
+on:
+  push:
+ 
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+ 
+    env:
+      DOTNET_VERSION: "8.0.x"
+      TEST_CONFIGURATION: "Release"
+ 
+      # ✅ Force Playwright to run headless even if code says Headless=false
+      PLAYWRIGHT_BROWSERS_PATH: ~/.cache/ms-playwright
+      PLAYWRIGHT_CHROMIUM_ARGS: "--headless=new --disable-gpu --no-sandbox"
+ 
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+ 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+ 
+      - name: Restore
+        run: dotnet restore
+ 
+      - name: Identify Playwright project
+        id: identify_proj
+        shell: pwsh
+        run: |
+          $proj = $null
+          foreach ($file in Get-ChildItem -Recurse -Filter *.csproj) {
+            [xml]$xml = Get-Content $file.FullName
+            if ($xml.Project.ItemGroup.PackageReference |
+                Where-Object { $_.Include -eq "Microsoft.Playwright" }) {
+              $proj = $file
+              break
+            }
+          }
+ 
+          if (-not $proj) {
+            Write-Error "No Playwright project found"
+            exit 1
+          }
+ 
+          "projPath=$($proj.FullName)" | Out-File $env:GITHUB_OUTPUT -Append
+ 
+      # ✅ Single step: build + install browsers + run tests
+      - name: Run Playwright tests (CI-safe headless)
+        run: |
+          dotnet test "${{ steps.identify_proj.outputs.projPath }}" \
+            --configuration ${{ env.TEST_CONFIGURATION }} \
+            --logger "trx;LogFileName=TestResults.trx"
+ 
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotnet-test-results
+          path: "**/TestResults.trx"
+ 
+      - name: Upload Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: |
+            **/playwright-report/**
+            **/test-results/**
+          if-no-files-found: ignore
