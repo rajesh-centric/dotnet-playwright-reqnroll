@@ -15,20 +15,26 @@ namespace PlaywrightPoc.Pages
         {
             _scenarioContext = scenarioContext;
             page = _scenarioContext.Get<IPage>("page");
+
         }
 
-        string searchBoxXpath = "//textarea[@name='q']";
-
-        public async Task NavigateToPage(string url)
-        {            
-            await page.GotoAsync(url);
-        }
-
-        public async Task FillSearchBox(string value)
+        // Perform a search on OrangeHRM if a search input is available; otherwise do nothing.
+        string orangeSearchXpath = "//input[contains(@placeholder,'Search') or contains(@aria-label,'Search')]";
+        public async Task PerformSearchOnOrangeHRM(string value)
         {
-            await page.FillAsync(searchBoxXpath, value);
-            Thread.Sleep(1000);
-            await page.Keyboard.PressAsync("Enter");
+            var locator = page.Locator(orangeSearchXpath);
+            if (await locator.CountAsync() > 0)
+            {
+                await locator.FillAsync(value);
+                await page.Keyboard.PressAsync("Enter");
+            }
+            // If the search control is not available, leave the page as-is; assertion below will fail deliberately.
+        }
+
+        public async Task AssertSearchResultsContain(string expectedText)
+        {
+            // Intentionally assert that the page body contains the text to force a failing test.
+            await Assertions.Expect(page.Locator("body")).ToContainTextAsync(expectedText);
         }
     }
 }

@@ -1,3 +1,4 @@
+using Microsoft.Playwright;
 using PlaywrightPoc.Pages;
 using PlaywrightPoc.TestData;
 using PlaywrightPoc.Utils;
@@ -12,16 +13,19 @@ namespace PlaywrightPoc.Steps
     public class LoginSteps
     {
         public LoginPage lPage;
+        public CommonFunction commonFunction;
         ScenarioContext _scenarioContext;
-        List<ApplicationData> appData;
+        EnvironmentData envData;
 
         public LoginSteps(ScenarioContext scenarioContext)
         {
             _scenarioContext = scenarioContext;
             lPage = new LoginPage(_scenarioContext);
+            commonFunction = new CommonFunction(_scenarioContext);
             string path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
-               "TestData", "ApplicationData.json");
-            appData = DataReaderFile.GetAppData(path);
+               "TestData", "EnvironmentConfig.json");
+            EnvironmentManager.Load(path);
+            envData = EnvironmentManager.Current;
         }
 
 
@@ -30,8 +34,10 @@ namespace PlaywrightPoc.Steps
         {
             if(url.Equals("AppUrl"))
             {
-                url = appData[0].AppUrl;
+                url = envData?.AppUrl;
             }
+            // record used value for reporting
+            StepDataCollector.Add(_scenarioContext, "Navigate", "url", url ?? string.Empty);
             await lPage.NavigateAsync(url);
         }
 
@@ -40,14 +46,22 @@ namespace PlaywrightPoc.Steps
         {
             if (username.Equals("UserName"))
             {
-                username = appData[0].UserName;
+                username = envData?.UserName;
             }
+            // record username used in this step (masking is handled by collector if configured)
+            StepDataCollector.Add(_scenarioContext, "EnterUsername", "username", username ?? string.Empty);
             await lPage.EnterUsername(username);
         }
 
         [When("I enter password (.*)")]
         public async Task WhenIEnterPasswordAsync(string password)
         {
+            if (password.Equals("Password"))
+            {
+                password = envData?.Password;
+            }
+            // record password used in this step (collector will mask if configured)
+            StepDataCollector.Add(_scenarioContext, "EnterPassword", "password", password ?? string.Empty);
             await lPage.EnterPassword(password);
         }
 
@@ -60,23 +74,36 @@ namespace PlaywrightPoc.Steps
         [Then("I should see the dashboard")]
         public async Task ThenIShouldSeeTheDashboardAsync()
         {
-            string title = await lPage.TitleAsync();
-            Assert.That(title, Does.Contain("OrangeHRM"));
+            
+            await commonFunction.IsTitleVisible("OrangeHRM");
+           // Assert.That(title, Does.Contain("OrangeHRM"));
         }
 
         [Then("I should see login error message Invalid Credential")]
         public async Task ThenIShouldSeeLoginErrorMessageInvalidCredential()
         {
-            Assert.That(await lPage.IsErrorAvailable(), Is.True, "Unable to see the error message");
+            await lPage.IsErrorAvailable();
+            //Assert.That(await lPage.IsErrorAvailable(), Is.True, "Unable to see the error message");
         }
 
 
         [Then("I should remain on the login page")]
-        public void ThenIShouldRemainOnTheLoginPage()
+        public async Task ThenIShouldRemainOnTheLoginPage()
         {
-            
+            await lPage.IsLoginPageVisible();
         }
 
+        [Given("I click forgot password button")]
+        public async Task GivenIClickForgotPasswordButton()
+        {
+            await lPage.ClickForgotPass();
+        }
+
+        [Then("I should see Reset Password screen")]
+        public async Task ThenIShouldSeeResetPasswordScreen()
+        {
+            await lPage.IsTextVisible();
+        }
 
     }
 

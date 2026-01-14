@@ -1,0 +1,20 @@
+[
+  {
+    "Name": "dev",
+    "AppUrl": "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+    "UserName": "Admin",
+    "Password": "admin123"
+  },
+  {
+    "Name": "qa",
+    "AppUrl": "https://qa.opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+    "UserName": "qauser",
+    "Password": "qapass"
+  },
+  {
+    "Name": "staging",
+    "AppUrl": "https://staging.example.com/web/index.php/auth/login",
+    "UserName": "staging",
+    "Password": "stagingpass"
+  }
+]

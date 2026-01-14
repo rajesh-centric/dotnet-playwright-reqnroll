@@ -2597,11 +2597,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\rajesh.katyal\\source\\repos\\CentricConsultingSln\\PlaywrightPoc\\PlaywrightPoc.csproj",
+      "projectUniqueName": "C:\\Users\\rajesh.katyal\\source\\repos1\\latest2\\PlaywrightPoc\\PlaywrightPoc.csproj",
       "projectName": "PlaywrightPoc",
-      "projectPath": "C:\\Users\\rajesh.katyal\\source\\repos\\CentricConsultingSln\\PlaywrightPoc\\PlaywrightPoc.csproj",
+      "projectPath": "C:\\Users\\rajesh.katyal\\source\\repos1\\latest2\\PlaywrightPoc\\PlaywrightPoc.csproj",
       "packagesPath": "C:\\Users\\rajesh.katyal\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\rajesh.katyal\\source\\repos\\CentricConsultingSln\\PlaywrightPoc\\obj\\",
+      "outputPath": "C:\\Users\\rajesh.katyal\\source\\repos1\\latest2\\PlaywrightPoc\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -2616,6 +2616,7 @@
       ],
       "sources": {
         "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "C:\\Program Files (x86)\\OpenText\\Functional Testing for Developers\\SDK\\DotNet\\nuget": {},
         "C:\\Program Files\\dotnet\\library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },

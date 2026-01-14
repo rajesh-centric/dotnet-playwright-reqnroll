@@ -1,0 +1,5 @@
+PlaywrightPoc.Features.ApifeatureFeature.SuccessfulLoginOnAPI
+PlaywrightPoc.Features.LoginFeature.LoginWithIncorrectPassword
+PlaywrightPoc.Features.LoginFeature.SuccessfulLogin
+PlaywrightPoc.Features.LoginFeature.ValidateForgotPasswordOnLoginPage
+PlaywrightPoc.Features.SearchFeature.SearchAfterLoginOnOrangeHRM_FailingAssertion

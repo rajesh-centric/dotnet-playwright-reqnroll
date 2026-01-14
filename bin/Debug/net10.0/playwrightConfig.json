@@ -2,6 +2,15 @@
   {
     "Channel": "chrome",
     "Headless": false,
-    "Args": "--start-maximized"
+    "Args": "--start-maximized",
+    "TraceOnFailure": true,
+    "TracesDir": "Traces",
+    "TraceFileNameFormat": "{scenario}_{timestamp}.zip",
+    "ScreenshotsOnFailure": true,
+    "ScreenshotDir": "Screen_shots",
+    "ScreenshotFileNameFormat": "{scenario}_{timestamp}.png",
+    "MaskSensitiveData": true,
+    "BaseURL": "https://api.example.com",
+    "SensitiveKeys": [ "password", "pass" ]
   }
  ]

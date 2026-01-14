@@ -1,4 +1,5 @@
 ﻿using PlaywrightPoc.Pages;
+using PlaywrightPoc.Utils;
 using Reqnroll;
 using System;
 using System.Collections.Generic;
@@ -18,16 +19,19 @@ namespace PlaywrightPoc.Steps
             sPage = new SearchPage(_scenarioContext);
         }
 
-        [Given("User navigates to the url (.*)")]
-        public async Task GivenUserNavigatesToTheUrl(string urlValue)
+     
+        [When("I perform a search for \"(.*)\"")]
+        public async Task WhenIPerformASearchFor(string value)
         {
-            await sPage.NavigateToPage(urlValue);
+            // record search term used for reporting
+            StepDataCollector.Add(_scenarioContext, "Search", "query", value ?? string.Empty);
+            await sPage.PerformSearchOnOrangeHRM(value);
         }
 
-        [When("User enters the value (.*) on Search Page")]
-        public async Task WhenUserEntersTheValuePlaywrightOnSearchPage(string value)
+        [Then("I should see search results contain \"(.*)\"")]
+        public async Task ThenIShouldSeeSearchResultsContain(string expectedText)
         {
-            await sPage.FillSearchBox(value);
+            await sPage.AssertSearchResultsContain(expectedText);
         }
 
     }

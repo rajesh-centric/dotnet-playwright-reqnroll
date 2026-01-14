@@ -1,0 +1,30 @@
+[
+  {
+    "StepName": "Navigate",
+    "Timestamp": "2026-01-10T19:40:11.0560680Z",
+    "Data": {
+      "url": "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login"
+    }
+  },
+  {
+    "StepName": "EnterUsername",
+    "Timestamp": "2026-01-10T19:40:23.2646889Z",
+    "Data": {
+      "username": "Admin"
+    }
+  },
+  {
+    "StepName": "EnterPassword",
+    "Timestamp": "2026-01-10T19:40:24.6453610Z",
+    "Data": {
+      "password": "****"
+    }
+  },
+  {
+    "StepName": "Search",
+    "Timestamp": "2026-01-10T19:40:26.6668493Z",
+    "Data": {
+      "query": "this-text-will-not-exist"
+    }
+  }
+]
