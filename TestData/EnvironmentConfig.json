@@ -15,6 +15,7 @@
     "Name": "staging",
     "AppUrl": "https://staging.example.com/web/index.php/auth/login",
     "UserName": "staging",
-    "Password": "stagingpass"
+    "Password": "stagingpass",
+    "Password2": "stagingpass"
   }
 ]
