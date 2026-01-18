@@ -10,7 +10,7 @@
     "ScreenshotDir": "Screen_shots",
     "ScreenshotFileNameFormat": "{scenario}_{timestamp}.png",
     "MaskSensitiveData": true,
-    "BaseURL": "https://api.example.com",
+    "BaseURL": "https://dummyjson.com",
     "SensitiveKeys": [ "password", "pass" ]
   }
  ]

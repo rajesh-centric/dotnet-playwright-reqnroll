@@ -42,6 +42,7 @@ namespace PlaywrightPoc.Hooks
             var Request =await playW.APIRequest.NewContextAsync(new APIRequestNewContextOptions
             {
                 BaseURL=cfg.BaseURL
+                 //BaseURL=cfg.TokenBaseURL
             });
             var browserOptions = new BrowserTypeLaunchOptions
             {
