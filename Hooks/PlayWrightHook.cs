@@ -1,5 +1,6 @@
 ﻿using Allure.Net.Commons;
 using Microsoft.Playwright;
+using NUnit.Framework.Interfaces;
 using PlaywrightPoc.Utils;
 using Reqnroll;
 using System;
@@ -154,6 +155,39 @@ namespace PlaywrightPoc.Hooks
             
             if (apiRequest != null)
                 await apiRequest.DisposeAsync();
+        }
+
+        [AfterStep]
+        public async Task AfterStep()
+        {
+            if (_scenarioContext.TestError != null)
+            {
+                var page = _scenarioContext.Get<IPage>("page");
+                var step = _scenarioContext.StepContext.StepInfo.Text;
+                var screenshotBytes = await page.ScreenshotAsync(new PageScreenshotOptions
+                {
+                    FullPage = true
+                });
+                AllureApi.AddAttachment($"Step Failure Screenshot: {step}", "image/png", screenshotBytes);
+
+                Exception ex = _scenarioContext.TestError;
+                switch (ex){
+                    case PlaywrightException pwEx:
+                        StepDataCollector.Add(_scenarioContext, $"Getting an playwright exception {pwEx.Message}", "API Code", "TestCustom" ?? string.Empty);
+                        Assert.Fail($"Playwright Exception in step '{step}': {pwEx.Message}\n{pwEx.StackTrace}");
+                        break;
+                    case InvalidCastException icEx:
+                        Assert.Fail($"Invalid Cast Exception in step '{step}': {icEx.Message}\n{icEx.StackTrace}");
+                        break;
+                    case NullReferenceException nrEx:
+                        Assert.Fail($"Null Reference Exception in step '{step}': {nrEx.Message}\n{nrEx.StackTrace}");
+                        break;                                       
+                    default:
+                    StepDataCollector.Add(_scenarioContext, $"Getting an default exception {ex.Message}", "API Code", "TestCustom" ?? string.Empty);
+                        Assert.Fail($"Playwright Exception in step '{step}': {ex.Message}\n{ex.StackTrace}");
+                        break;
+                }
+            }
         }
 
         private static string SanitizeFileName(string name)
